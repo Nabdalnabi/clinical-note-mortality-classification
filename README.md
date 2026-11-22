@@ -1,4 +1,49 @@
-# Clinical-Note Mortality Classification
+# Predicting Recorded Mortality in Early-Stage Breast Cancer
+
+### Clinical Notes and Pretrained Biomedical Language Models
+
+**Accepted abstract: IEEE EMBS BHI 2026** (acceptance reported by the author).
+
+**Research title:** Predicting Recorded Mortality in Early-Stage Breast Cancer
+from Clinical Notes Using Pretrained Biomedical Language Models
+
+**Authors:** Nader Abdalnabi, Butros M. Dahu, Khuder Alaboud,
+Hulayil Alshammari, and Mariam S. Alshehri.
+
+This repository accompanies research on whether short oncology and pathology
+summaries contain measurable information associated with recorded mortality.
+The study evaluated **401 patients with early-stage breast cancer**, including
+**43 recorded deaths** (prevalence approximately **10.7%**).
+
+## Study findings
+
+The accepted abstract describes four frozen encoders: **BioClinicalBERT,
+BiomedBERT, Clinical-Longformer, and BioDistilBERT**. Clinical notes were chunked,
+mean-pooled, and aggregated into patient embeddings, then standardized and reduced
+with PCA before regularized logistic regression and nested stratified evaluation.
+
+| Model / reference | Measure reported in the abstract | Value |
+| --- | --- | ---: |
+| BiomedBERT | Mean ROC-AUC | 0.642 |
+| BiomedBERT | Mean precision-recall AUC | 0.213 |
+| BioDistilBERT | Sensitivity | 0.395 |
+| BioDistilBERT | Balanced accuracy | 0.571 |
+| BioDistilBERT | Pooled precision-recall AUC | 0.150 |
+| Cohort reference | Prevalence baseline | 0.107 |
+
+**Interpretation:** BiomedBERT had the best discrimination in the abstract;
+BioDistilBERT had the highest sensitivity and balanced accuracy. These are modest
+research findings, not evidence of clinical readiness. Mean-fold and pooled
+metrics are different summaries and should not be compared as interchangeable.
+Unreported values for the other encoders are intentionally not inferred.
+
+These aggregate values are transcribed from the author-supplied submission
+screenshot, not generated or independently reproduced by this repository.
+Conference acceptance is reported by the author; the supplied screenshot shows
+the submission entry, not an acceptance decision. No proceedings DOI or public
+abstract URL has been supplied. This is not represented as a published full paper.
+
+## Code sample versus conference study
 
 Research code adapted from Nader Abdalnabi's breast-cancer clinical-note notebooks.
 The implemented workflow uses a frozen Hugging Face BioDistilBERT encoder,
@@ -10,13 +55,28 @@ fine-tuning or generative prognosis.
 
 The notebook target is **death recorded versus no death recorded**. Missing death
 documentation does not establish survival. This is not a time-to-event model,
-does not address censoring, and does not estimate five-year mortality. No clinical
-performance claims or original patient results are published in this sample.
+does not address censoring, and does not estimate five-year mortality. The aggregate
+abstract findings above are research context, not results reproduced by this sample.
 
 The longer source notebook also explores `emilyalsentzer/Bio_ClinicalBERT` and
 `yikuan8/Clinical-Longformer`. The smaller, focused notebook was selected as the
 basis here; only `nlpie/bio-distilbert-uncased` is implemented in this release.
 No claim is made that it outperforms the other encoders.
+
+The public implementation covers **BioDistilBERT only**, not the complete four-model
+study. It does not claim to reproduce the BiomedBERT result or all conference
+experiments. A precise BiomedBERT checkpoint must be verified from the research
+configuration before adding it; no checkpoint is guessed here.
+
+## Repository guide
+
+| File | Purpose |
+| --- | --- |
+| `run.py` | Command-line evaluation and aggregate-only exports |
+| `modeling.py` | Frozen encoding, chunk pooling, PCA, and nested model selection |
+| `validation.py` | Patient uniqueness, note quality, and binary-label checks |
+| `requirements.txt` | Dependency ranges |
+| `.gitignore` | Excludes files other than the allowed source/documentation types |
 
 ## Workflow
 
@@ -69,3 +129,16 @@ Follow-up completeness, outcome adjudication, note timestamps, calibration,
 subgroup fairness, confidence intervals, and external validation remain necessary.
 No full model download, clinical training, or clinical reproduction was performed
 when preparing this code. This is a research sample, not a clinical decision tool.
+
+The abstract highlights the small number of deaths, class imbalance, performance
+variability, and lack of time-to-event modeling as limitations. Planned research
+directions are integration with structured clinical variables, censoring-aware
+survival outcomes, calibration, and external validation; these are not implemented
+features of this code sample.
+
+## Suggested research reference
+
+Abdalnabi, N., Dahu, B. M., Alaboud, K., Alshammari, H., and Alshehri, M. S.
+"Predicting Recorded Mortality in Early-Stage Breast Cancer from Clinical Notes
+Using Pretrained Biomedical Language Models." Accepted abstract, IEEE EMBS BHI
+2026 (author-reported acceptance; proceedings details pending).
