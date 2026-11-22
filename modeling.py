@@ -1,4 +1,4 @@
-"""Frozen BioDistilBERT research helpers extracted from the supplied notebook."""
+"""Frozen biomedical encoder helpers adapted from the supplied notebook."""
 import gc
 import numpy as np
 import pandas as pd
@@ -47,6 +47,8 @@ def embed_single_note(note, tokenizer, model, device, max_length, stride, chunk_
     chunk_embeddings = []
     chunk_weights = []
     allowed_model_inputs = {'input_ids', 'attention_mask'}
+    if model.config.model_type == 'bert':
+        allowed_model_inputs.add('token_type_ids')
     with torch.no_grad():
         for chunk_start in range(0, number_of_chunks, chunk_batch_size):
             chunk_end = min(chunk_start + chunk_batch_size, number_of_chunks)
@@ -59,6 +61,10 @@ def embed_single_note(note, tokenizer, model, device, max_length, stride, chunk_
                 chunk_features.append(one_chunk)
             padded_batch = tokenizer.pad(chunk_features, padding=True, return_tensors='pt')
             model_inputs = {key: value.to(device) for (key, value) in padded_batch.items() if key in allowed_model_inputs}
+            if model.config.model_type == 'longformer':
+                global_mask = torch.zeros_like(model_inputs['attention_mask'])
+                global_mask[:, 0] = 1
+                model_inputs['global_attention_mask'] = global_mask
             model_outputs = model(**model_inputs)
             hidden_states = model_outputs.last_hidden_state
             pooled_chunks = mean_pool_hidden_states(hidden_states, model_inputs['attention_mask'])
@@ -71,14 +77,17 @@ def embed_single_note(note, tokenizer, model, device, max_length, stride, chunk_
     return patient_embedding.astype(np.float32)
 
 def extract_patient_embeddings(notes, model_label, model_specification, device):
-    """Extract one frozen BioDistilBERT embedding per patient."""
+    """Extract one frozen encoder embedding per patient."""
     model_id = model_specification['model_id']
     print('\n' + '=' * 70)
     print('Loading:', model_label)
     print('Hugging Face model:', model_id)
     print('=' * 70)
-    tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=True, trust_remote_code=False)
-    model = AutoModel.from_pretrained(model_id, trust_remote_code=False, low_cpu_mem_usage=False)
+    load_options = dict(revision=model_specification.get('revision', 'main'),
+                        local_files_only=model_specification.get('local_files_only', False),
+                        trust_remote_code=False)
+    tokenizer = AutoTokenizer.from_pretrained(model_id, use_fast=True, **load_options)
+    model = AutoModel.from_pretrained(model_id, low_cpu_mem_usage=False, **load_options)
     model = model.to(device)
     model.eval()
     for parameter in model.parameters():
@@ -89,8 +98,8 @@ def extract_patient_embeddings(notes, model_label, model_specification, device):
         all_patient_embeddings.append(patient_embedding)
     embedding_matrix = np.vstack(all_patient_embeddings)
     if not np.isfinite(embedding_matrix).all():
-        raise ValueError('BioDistilBERT produced NaN or infinite embeddings.')
-    print('\nBioDistilBERT embedding shape:', embedding_matrix.shape)
+        raise ValueError('Encoder produced NaN or infinite embeddings.')
+    print('\nEmbedding shape:', embedding_matrix.shape)
     del model
     del tokenizer
     del all_patient_embeddings
@@ -109,7 +118,7 @@ def create_embedding_classifier():
     return Pipeline(steps=[('scaler', StandardScaler()), ('pca', PCA(n_components=16, svd_solver='randomized', random_state=RANDOM_STATE)), ('classifier', LogisticRegression(penalty='l2', solver='liblinear', max_iter=5000, random_state=RANDOM_STATE))])
 
 def evaluate_note_embeddings(embedding_matrix, outcome, encoder_name):
-    """Evaluate BioDistilBERT using nested five-fold CV."""
+    """Evaluate frozen embeddings using nested five-fold CV."""
     outer_cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
     fold_records = []
     fold_best_parameters = []

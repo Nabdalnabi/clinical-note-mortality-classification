@@ -46,7 +46,7 @@ abstract URL has been supplied. This is not represented as a published full pape
 ## Code sample versus conference study
 
 Research code adapted from Nader Abdalnabi's breast-cancer clinical-note notebooks.
-The implemented workflow uses a frozen Hugging Face BioDistilBERT encoder,
+The implemented workflow supports four frozen Hugging Face biomedical encoders,
 overlapping token windows, patient-level embedding aggregation, and a tuned
 PCA/logistic-regression classifier. This is feature extraction, not language-model
 fine-tuning or generative prognosis.
@@ -60,13 +60,26 @@ abstract findings above are research context, not results reproduced by this sam
 
 The longer source notebook also explores `emilyalsentzer/Bio_ClinicalBERT` and
 `yikuan8/Clinical-Longformer`. The smaller, focused notebook was selected as the
-basis here; only `nlpie/bio-distilbert-uncased` is implemented in this release.
+basis here; the shared pipeline now exposes all four study model families.
 No claim is made that it outperforms the other encoders.
 
-The public implementation covers **BioDistilBERT only**, not the complete four-model
-study. It does not claim to reproduce the BiomedBERT result or all conference
-experiments. A precise BiomedBERT checkpoint must be verified from the research
-configuration before adding it; no checkpoint is guessed here.
+The public implementation supports the four encoders below, but has not reproduced
+the conference experiments. **The BiomedBERT abstracts-plus-full-text checkpoint
+is an explicit implementation choice; its exact match to the conference run is
+unconfirmed.** All encoder weights remain frozen.
+
+| CLI encoder | Hugging Face checkpoint | Window / overlap | Chunk batch |
+| --- | --- | --- | ---: |
+| `biodistilbert` | `nlpie/bio-distilbert-uncased` | 512 / 128 | 8 |
+| `bioclinicalbert` | `emilyalsentzer/Bio_ClinicalBERT` | 512 / 128 | 8 |
+| `biomedbert` | `microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext` | 512 / 128 | 8 |
+| `clinical-longformer` | `yikuan8/Clinical-Longformer` | 4096 / 512 | 1 |
+
+BERT models receive token-type IDs when provided by the tokenizer. Clinical-Longformer
+uses global attention on the first token of each chunk. Longformer is a related
+long-context Transformer architecture, not a standard BERT architecture.
+See the [BiomedBERT model card](https://huggingface.co/microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext)
+and [Clinical-Longformer documentation](https://github.com/yikuan8/Clinical-Longformer).
 
 ## Repository guide
 
@@ -75,13 +88,15 @@ configuration before adding it; no checkpoint is guessed here.
 | `run.py` | Command-line evaluation and aggregate-only exports |
 | `modeling.py` | Frozen encoding, chunk pooling, PCA, and nested model selection |
 | `validation.py` | Patient uniqueness, note quality, and binary-label checks |
+| `encoders.py` | Four named encoder presets |
+| `test_encoders.py` | Lightweight configuration tests requiring no model downloads |
 | `requirements.txt` | Dependency ranges |
 | `.gitignore` | Excludes files other than the allowed source/documentation types |
 
 ## Workflow
 
 1. Validate one nonempty note per unique patient and explicit binary labels.
-2. Encode locally with frozen BioDistilBERT using 512-token windows and 128-token overlap.
+2. Encode locally with the selected frozen encoder and its configured overlapping windows.
 3. Mean-pool nonpadding tokens; aggregate chunks weighted by token counts.
 4. Use five outer stratified folds and four inner folds. Scaling, PCA, and
    logistic-regression tuning occur within the training folds only.
@@ -104,6 +119,23 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 python run.py --csv /approved/local/cohort.csv --output-dir artifacts/run01 --confirm-pre-outcome-notes
 ```
+
+Run each encoder on the same authorized input with a separate output directory:
+
+```bash
+for encoder in biodistilbert bioclinicalbert biomedbert clinical-longformer; do
+  python run.py --csv /approved/local/cohort.csv --encoder "$encoder" \
+    --output-dir "artifacts/$encoder" --confirm-pre-outcome-notes
+done
+python -m unittest test_encoders
+```
+
+The fixed seed gives identical patient folds across these runs when row ordering
+and cohort are unchanged. Add `--revision MODEL_COMMIT_SHA` to pin a checkpoint;
+add `--offline` to require cached files. Each encoder has its own revision.
+Two configuration tests, syntax checks, and CLI help checks passed. Actual model
+loading, attention execution, and end-to-end training for the four encoders have
+not been validated. Clinical-Longformer is substantially more memory-intensive.
 
 CSV columns: `patient_id`, `note`, `death_event`. Labels must be independently
 reviewed: 1 means recorded death, 0 means no recorded death. Unlike the notebook,
