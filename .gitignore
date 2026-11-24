@@ -3,3 +3,7 @@
 !README.md
 !requirements.txt
 !.gitignore
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml
+!LICENSE

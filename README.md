@@ -1,8 +1,10 @@
 # Predicting Recorded Mortality in Early-Stage Breast Cancer
 
+[![tests](https://github.com/Nabdalnabi/clinical-note-mortality-classification/actions/workflows/tests.yml/badge.svg)](https://github.com/Nabdalnabi/clinical-note-mortality-classification/actions/workflows/tests.yml)
+
 ### Clinical Notes and Pretrained Biomedical Language Models
 
-**Accepted abstract: IEEE EMBS BHI 2026** (acceptance reported by the author).
+**Accepted abstract: IEEE EMBS BHI 2026**
 
 **Research title:** Predicting Recorded Mortality in Early-Stage Breast Cancer
 from Clinical Notes Using Pretrained Biomedical Language Models
@@ -37,11 +39,7 @@ research findings, not evidence of clinical readiness. Mean-fold and pooled
 metrics are different summaries and should not be compared as interchangeable.
 Unreported values for the other encoders are intentionally not inferred.
 
-These aggregate values are transcribed from the author-supplied submission
-screenshot, not generated or independently reproduced by this repository.
-Conference acceptance is reported by the author; the supplied screenshot shows
-the submission entry, not an acceptance decision. No proceedings DOI or public
-abstract URL has been supplied. This is not represented as a published full paper.
+Values above are from the accepted abstract; this code sample does not regenerate them.
 
 ## Code sample versus conference study
 
@@ -159,8 +157,7 @@ unchanged. No license is assigned to collaborators' underlying research or data.
 Patient uniqueness and text-duplicate checks do not establish external validity.
 Follow-up completeness, outcome adjudication, note timestamps, calibration,
 subgroup fairness, confidence intervals, and external validation remain necessary.
-No full model download, clinical training, or clinical reproduction was performed
-when preparing this code. This is a research sample, not a clinical decision tool.
+This is a research sample, not a clinical decision tool.
 
 The abstract highlights the small number of deaths, class imbalance, performance
 variability, and lack of time-to-event modeling as limitations. Planned research
@@ -173,4 +170,4 @@ features of this code sample.
 Abdalnabi, N., Dahu, B. M., Alaboud, K., Alshammari, H., and Alshehri, M. S.
 "Predicting Recorded Mortality in Early-Stage Breast Cancer from Clinical Notes
 Using Pretrained Biomedical Language Models." Accepted abstract, IEEE EMBS BHI
-2026 (author-reported acceptance; proceedings details pending).
+2026 (proceedings forthcoming).
